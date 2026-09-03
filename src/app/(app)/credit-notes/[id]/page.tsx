@@ -7,6 +7,7 @@ import { invoiceBalance } from "@/lib/money";
 import { requireSession } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
+import { ActionButton } from "@/components/action-button";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
 import { cancelCreditNote, deleteCreditNote, issueCreditNote } from "../actions";
@@ -67,12 +68,13 @@ export default async function CreditNoteDetailPage({
                 </ConfirmButton>
               </form>
             ) : null}
-            {isAdmin(session) && note.status === "DRAFT" ? (
-              <form action={remove}>
-                <ConfirmButton message={`Hapus draft ${note.number}?`}>
-                  Hapus
-                </ConfirmButton>
-              </form>
+            {isAdmin(session) ? (
+              <ActionButton
+                action={remove}
+                message={`Hapus draft ${note.number}?`}
+              >
+                Hapus
+              </ActionButton>
             ) : null}
           </div>
         }

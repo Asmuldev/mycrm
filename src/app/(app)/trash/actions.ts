@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ActionResult } from "@/components/action-button";
 import { recordAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -29,7 +30,10 @@ async function isArchived(kind: TrashKind, id: string) {
   }
 }
 
-export async function restoreItem(kind: TrashKind, id: string) {
+export async function restoreItem(
+  kind: TrashKind,
+  id: string,
+): Promise<ActionResult> {
   const session = await requireAdmin();
   const data = { deletedAt: null };
 
@@ -49,10 +53,28 @@ export async function restoreItem(kind: TrashKind, id: string) {
 }
 
 /** Irreversible. Only reachable from the trash page, admin only. */
-export async function purgeItem(kind: TrashKind, id: string) {
+export async function purgeItem(
+  kind: TrashKind,
+  id: string,
+): Promise<ActionResult> {
   const session = await requireAdmin();
   if (!(await isArchived(kind, id))) {
-    throw new Error("Item tidak ada di sampah");
+    return { error: "Item tidak ada di sampah" };
+  }
+
+  // Financial records keep a client alive on purpose: deleting the client would
+  // orphan invoices that must stay auditable.
+  if (kind === "client") {
+    const [invoices, notes] = await Promise.all([
+      // Archived invoices count too: purging the client would orphan them.
+      prisma.invoice.count({ where: { clientId: id, OR: [{ deletedAt: null }, { deletedAt: { not: null } }] } }),
+      prisma.creditNote.count({ where: { clientId: id } }),
+    ]);
+    if (invoices > 0 || notes > 0) {
+      return {
+        error: `Klien ini masih punya ${invoices} invoice dan ${notes} nota kredit. Hapus permanen dokumen itu dulu, atau biarkan klien tetap di sampah.`,
+      };
+    }
   }
 
   if (kind === "client") await prisma.client.delete({ where: { id } });

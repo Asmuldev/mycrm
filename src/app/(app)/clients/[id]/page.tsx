@@ -23,6 +23,7 @@ import {
 } from "@/components/ui";
 import { getCompanyProfile } from "@/lib/invoice";
 import { invoiceBalance, toBaseAmount } from "@/lib/money";
+import { ActionButton } from "@/components/action-button";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
 import { AttachmentsCard } from "@/components/attachments-card";
@@ -129,11 +130,12 @@ export default async function ClientDetailPage({
               Edit
             </LinkButton>
             {isAdmin(session) ? (
-              <form action={deleteThisClient}>
-                <ConfirmButton message={`Hapus klien "${client.name}"?`}>
-                  Hapus
-                </ConfirmButton>
-              </form>
+              <ActionButton
+                action={deleteThisClient}
+                message={`Pindahkan klien "${client.name}" ke sampah? Invoice, penawaran, dan proyeknya tetap tersimpan, dan klien bisa dipulihkan lagi.`}
+              >
+                Hapus
+              </ActionButton>
             ) : null}
           </div>
         }
@@ -502,17 +504,14 @@ export default async function ClientDetailPage({
                             {credit.reference ? ` · ${credit.reference}` : ""}
                           </p>
                         </div>
-                        {credit.applications.length === 0 ? (
-                          <form action={removeCredit}>
-                            <ConfirmButton
-                              message="Hapus catatan uang muka ini?"
-                              variant="ghost"
-                              className="px-2 py-1 text-xs text-rose-600"
-                            >
-                              Hapus
-                            </ConfirmButton>
-                          </form>
-                        ) : null}
+                        <ActionButton
+                          action={removeCredit}
+                          message="Hapus catatan uang muka ini?"
+                          variant="ghost"
+                          className="px-2 py-1 text-xs text-rose-600"
+                        >
+                          Hapus
+                        </ActionButton>
                       </div>
 
                       {remaining > 0 && openInvoices.length > 0 ? (

@@ -21,6 +21,7 @@ import {
   LinkButton,
   PageHeader,
 } from "@/components/ui";
+import { ActionButton } from "@/components/action-button";
 import { ConfirmButton } from "@/components/confirm-button";
 import { CustomFieldsCard } from "@/components/custom-fields-card";
 import { SubmitButton } from "@/components/submit-button";
@@ -204,15 +205,14 @@ export default async function ProjectDetailPage({
                             : "-"}
                         </span>
                         {entry.invoiceId ? null : (
-                          <form action={remove}>
-                            <ConfirmButton
-                              message="Hapus entri waktu ini?"
-                              variant="ghost"
-                              className="px-2 py-1 text-xs text-rose-600"
-                            >
-                              Hapus
-                            </ConfirmButton>
-                          </form>
+                          <ActionButton
+                            action={remove}
+                            message="Hapus entri waktu ini?"
+                            variant="ghost"
+                            className="px-2 py-1 text-xs text-rose-600"
+                          >
+                            Hapus
+                          </ActionButton>
                         )}
                       </div>
                     </li>

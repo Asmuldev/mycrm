@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { ActionResult } from "@/components/action-button";
 import { recordAudit } from "@/lib/audit";
 import { requireSession } from "@/lib/auth";
 import { dateField, optionalString, toNumber } from "@/lib/format";
@@ -119,11 +120,16 @@ export async function logTime(
   return { success: "Waktu tercatat" };
 }
 
-export async function deleteTimeEntry(projectId: string, entryId: string) {
+export async function deleteTimeEntry(
+  projectId: string,
+  entryId: string,
+): Promise<ActionResult> {
   await requireSession();
   const entry = await prisma.timeEntry.findUnique({ where: { id: entryId } });
   if (entry?.invoiceId) {
-    throw new Error("Entri ini sudah ditagihkan. Hapus invoicenya dulu.");
+    return {
+      error: "Entri ini sudah ditagihkan. Batalkan invoicenya dulu.",
+    };
   }
 
   await prisma.timeEntry.delete({ where: { id: entryId } });

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { ActionResult } from "@/components/action-button";
 import { recordAudit } from "@/lib/audit";
 import { requireSession } from "@/lib/auth";
 import { parseCsv } from "@/lib/csv";
@@ -57,15 +58,14 @@ export async function updateClient(id: string, formData: FormData) {
   redirect(`/clients/${id}`);
 }
 
-export async function deleteClient(id: string) {
+/**
+ * Archives a client. Invoices, quotes, and projects stay untouched and remain
+ * visible in their own lists, because they are financial records that outlive
+ * the contact they belong to. The client is restorable from the trash page.
+ */
+export async function deleteClient(id: string): Promise<ActionResult> {
   const session = await requireAdmin();
-  const invoiceCount = await prisma.invoice.count({ where: { clientId: id } });
-  if (invoiceCount > 0) {
-    throw new Error(
-      "Klien masih punya invoice. Hapus atau pindahkan invoice dulu.",
-    );
-  }
-  // Archived, not destroyed: restorable from the trash page.
+
   const client = await prisma.client.update({
     where: { id },
     data: { deletedAt: new Date() },
@@ -356,17 +356,19 @@ export async function applyClientCredit(creditId: string, formData: FormData) {
   revalidatePath(`/invoices/${invoiceId}`);
 }
 
-export async function deleteClientCredit(creditId: string) {
+export async function deleteClientCredit(
+  creditId: string,
+): Promise<ActionResult> {
   const session = await requireAdmin();
   const credit = await prisma.clientCredit.findUnique({
     where: { id: creditId },
     include: { applications: true },
   });
-  if (!credit) return;
+  if (!credit) return { error: "Uang muka tidak ditemukan" };
   if (credit.applications.length > 0) {
-    throw new Error(
-      "Uang muka ini sudah dipakai di invoice. Hapus pembayarannya dulu.",
-    );
+    return {
+      error: "Uang muka ini sudah dipakai di invoice. Hapus pembayarannya dulu.",
+    };
   }
 
   await prisma.clientCredit.delete({ where: { id: creditId } });

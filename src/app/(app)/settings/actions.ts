@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import type { ActionResult } from "@/components/action-button";
 import { recordAudit } from "@/lib/audit";
 import { requireSession } from "@/lib/auth";
 import { optionalString, toNumber } from "@/lib/format";
@@ -198,17 +199,17 @@ export async function setUserRole(userId: string, formData: FormData) {
   revalidatePath("/settings");
 }
 
-export async function deleteUser(userId: string) {
+export async function deleteUser(userId: string): Promise<ActionResult> {
   const session = await requireAdmin();
   if (userId === session.userId) {
-    throw new Error("Tidak bisa menghapus akun Anda sendiri");
+    return { error: "Tidak bisa menghapus akun Anda sendiri" };
   }
 
   const remainingAdmins = await prisma.user.count({
     where: { role: "ADMIN", id: { not: userId } },
   });
   if (remainingAdmins === 0) {
-    throw new Error("Harus ada minimal satu admin");
+    return { error: "Harus ada minimal satu admin" };
   }
 
   const user = await prisma.user.delete({ where: { id: userId } });

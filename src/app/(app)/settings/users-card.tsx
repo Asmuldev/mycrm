@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Card, CardHeader, Field, Input, Select } from "@/components/ui";
-import { ConfirmButton } from "@/components/confirm-button";
+import { ActionButton } from "@/components/action-button";
 import { SubmitButton } from "@/components/submit-button";
 import {
   createUser,
@@ -71,15 +71,14 @@ export function UsersCard({
                   </Select>
                 </form>
                 {isSelf ? null : (
-                  <form action={removeUser}>
-                    <ConfirmButton
-                      message={`Hapus pengguna ${user.email}?`}
-                      variant="ghost"
-                      className="px-2 py-1 text-xs text-rose-600"
-                    >
-                      Hapus
-                    </ConfirmButton>
-                  </form>
+                  <ActionButton
+                    action={removeUser}
+                    message={`Hapus pengguna ${user.email}?`}
+                    variant="ghost"
+                    className="px-2 py-1 text-xs text-rose-600"
+                  >
+                    Hapus
+                  </ActionButton>
                 )}
               </div>
             </li>

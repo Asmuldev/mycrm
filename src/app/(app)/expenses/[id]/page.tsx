@@ -13,7 +13,7 @@ import {
   LinkButton,
   PageHeader,
 } from "@/components/ui";
-import { ConfirmButton } from "@/components/confirm-button";
+import { ActionButton } from "@/components/action-button";
 import { AttachmentsCard } from "@/components/attachments-card";
 import { deleteExpense } from "../actions";
 
@@ -61,12 +61,13 @@ export default async function ExpenseDetailPage({
                 Edit
               </LinkButton>
             )}
-            {isAdmin(session) && !expense.invoiceId ? (
-              <form action={remove}>
-                <ConfirmButton message={`Hapus biaya "${expense.description}"?`}>
-                  Hapus
-                </ConfirmButton>
-              </form>
+            {isAdmin(session) ? (
+              <ActionButton
+                action={remove}
+                message={`Hapus biaya "${expense.description}"?`}
+              >
+                Hapus
+              </ActionButton>
             ) : null}
           </div>
         }

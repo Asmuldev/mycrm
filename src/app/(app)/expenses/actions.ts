@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { ActionResult } from "@/components/action-button";
 import { recordAudit } from "@/lib/audit";
 import { requireSession } from "@/lib/auth";
 import { dateField, optionalString, toNumber } from "@/lib/format";
@@ -65,11 +66,13 @@ export async function updateExpense(id: string, formData: FormData) {
   redirect(`/expenses/${id}`);
 }
 
-export async function deleteExpense(id: string) {
+export async function deleteExpense(id: string): Promise<ActionResult> {
   const session = await requireAdmin();
   const current = await prisma.expense.findUnique({ where: { id } });
   if (current?.invoiceId) {
-    throw new Error("Biaya ini sudah ditagihkan. Hapus invoicenya dulu.");
+    return {
+      error: "Biaya ini sudah ditagihkan. Batalkan invoicenya dulu.",
+    };
   }
 
   const expense = await prisma.expense.update({

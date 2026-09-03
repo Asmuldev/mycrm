@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { ActionResult } from "@/components/action-button";
 import { recordAudit } from "@/lib/audit";
 import { requireSession } from "@/lib/auth";
 import { dateField, optionalString, toNumber } from "@/lib/format";
@@ -118,12 +119,14 @@ export async function cancelCreditNote(id: string) {
   revalidatePath(`/invoices/${note.invoiceId}`);
 }
 
-export async function deleteCreditNote(id: string) {
+export async function deleteCreditNote(id: string): Promise<ActionResult> {
   const session = await requireAdmin();
   const note = await prisma.creditNote.findUnique({ where: { id } });
-  if (!note) return;
+  if (!note) return { error: "Nota kredit tidak ditemukan" };
   if (note.status === "ISSUED") {
-    throw new Error("Nota kredit yang sudah terbit harus dibatalkan, bukan dihapus");
+    return {
+      error: "Nota kredit yang sudah terbit harus dibatalkan, bukan dihapus.",
+    };
   }
 
   await prisma.creditNote.delete({ where: { id } });

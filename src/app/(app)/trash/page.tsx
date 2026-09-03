@@ -4,8 +4,7 @@ import { formatDateTime, formatMoney } from "@/lib/format";
 import { requireSession } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
-import { ConfirmButton } from "@/components/confirm-button";
-import { SubmitButton } from "@/components/submit-button";
+import { ActionButton } from "@/components/action-button";
 import { purgeItem, restoreItem, type TrashKind } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -135,25 +134,23 @@ export default async function TrashPage() {
                         </p>
                       </div>
                       {admin ? (
-                        <div className="flex gap-2">
-                          <form action={restore}>
-                            <SubmitButton
-                              variant="secondary"
-                              className="px-2 py-1 text-xs"
-                              pendingLabel="..."
-                            >
-                              Pulihkan
-                            </SubmitButton>
-                          </form>
-                          <form action={purge}>
-                            <ConfirmButton
-                              message={`Hapus permanen "${row.title}"? Tindakan ini tidak bisa dibatalkan.`}
-                              variant="ghost"
-                              className="px-2 py-1 text-xs text-rose-600"
-                            >
-                              Hapus permanen
-                            </ConfirmButton>
-                          </form>
+                        <div className="flex flex-wrap gap-2">
+                          <ActionButton
+                            action={restore}
+                            variant="secondary"
+                            className="px-2 py-1 text-xs"
+                            pendingLabel="..."
+                          >
+                            Pulihkan
+                          </ActionButton>
+                          <ActionButton
+                            action={purge}
+                            message={`Hapus permanen "${row.title}"? Tindakan ini tidak bisa dibatalkan.`}
+                            variant="ghost"
+                            className="px-2 py-1 text-xs text-rose-600"
+                          >
+                            Hapus permanen
+                          </ActionButton>
                         </div>
                       ) : null}
                     </li>
