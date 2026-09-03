@@ -5,6 +5,8 @@ import { getCompanyProfile } from "@/lib/invoice";
 import { invoiceStatusLabel } from "@/lib/labels";
 import { invoiceBalance } from "@/lib/money";
 import { resolvePortalToken, touchPortalToken } from "@/lib/portal";
+import { serviceStatusLabel } from "@/lib/labels";
+import { formatBytes } from "@/lib/services";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,7 @@ export default async function ClientPortalPage({
 
   await touchPortalToken(portal.id);
 
-  const [profile, invoices, credits] = await Promise.all([
+  const [profile, invoices, credits, services] = await Promise.all([
     getCompanyProfile(),
     prisma.invoice.findMany({
       where: {
@@ -32,6 +34,10 @@ export default async function ClientPortalPage({
     }),
     prisma.clientCredit.findMany({
       where: { clientId: portal.clientId, remaining: { gt: 0 } },
+    }),
+    prisma.service.findMany({
+      where: { clientId: portal.clientId, status: { not: "TERMINATED" } },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -92,6 +98,54 @@ export default async function ClientPortalPage({
             </p>
           </div>
         </div>
+
+        {services.length > 0 ? (
+          <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-100 px-5 py-3">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Layanan Anda
+              </h2>
+            </div>
+            <ul className="divide-y divide-slate-100">
+              {services.map((service) => (
+                <li
+                  key={service.id}
+                  className="flex flex-wrap items-start justify-between gap-3 px-5 py-4"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {service.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {service.domain ?? "-"}
+                      {service.phpVersion ? ` · PHP ${service.phpVersion}` : ""}
+                      {service.diskUsedBytes
+                        ? ` · disk ${formatBytes(service.diskUsedBytes)}`
+                        : ""}
+                    </p>
+                    {service.sslExpiresAt ? (
+                      <p className="text-xs text-slate-500">
+                        SSL berlaku sampai {formatDate(service.sslExpiresAt)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-slate-700">
+                      {serviceStatusLabel[service.status]}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {service.remoteRunning === null
+                        ? ""
+                        : service.remoteRunning
+                          ? "berjalan"
+                          : "berhenti"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="border-b border-slate-100 px-5 py-3">

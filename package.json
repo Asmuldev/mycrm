@@ -16,7 +16,8 @@
     "db:backup": "tsx scripts/backup.ts",
     "db:restore": "tsx scripts/restore.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "aapanel:probe": "tsx scripts/aapanel-probe.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

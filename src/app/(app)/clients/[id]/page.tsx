@@ -59,6 +59,7 @@ export default async function ClientDetailPage({
     include: {
       quotes: { where: { deletedAt: null }, orderBy: { issueDate: "desc" } },
       projects: { where: { deletedAt: null }, orderBy: { updatedAt: "desc" } },
+      services: { where: { deletedAt: null }, orderBy: { name: "asc" } },
       credits: {
         orderBy: { receivedAt: "desc" },
         include: { applications: true },
@@ -469,6 +470,46 @@ export default async function ClientDetailPage({
                       {project.name}
                     </Link>
                     <Badge value={project.status} label={project.status} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Layanan"
+              action={
+                <LinkButton
+                  href={`/services/new?clientId=${client.id}`}
+                  variant="secondary"
+                  className="px-2 py-1 text-xs"
+                >
+                  + Layanan
+                </LinkButton>
+              }
+            />
+            {client.services.length === 0 ? (
+              <EmptyState title="Belum ada layanan" />
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {client.services.map((service) => (
+                  <li
+                    key={service.id}
+                    className="flex items-center justify-between gap-3 px-5 py-3"
+                  >
+                    <div className="min-w-0">
+                      <Link
+                        href={`/services/${service.id}`}
+                        className="text-sm font-medium text-slate-800 hover:underline"
+                      >
+                        {service.name}
+                      </Link>
+                      <p className="text-xs text-slate-500">
+                        {service.domain ?? "-"}
+                      </p>
+                    </div>
+                    <Badge value={service.status} label={service.status} />
                   </li>
                 ))}
               </ul>

@@ -111,6 +111,7 @@ model Client {
   creditNotes  CreditNote[]
   credits      ClientCredit[]
   portalTokens PortalToken[]
+  services     Service[]
 
   @@index([status])
   @@index([name])
@@ -415,6 +416,7 @@ model RecurringInvoice {
 
   items    RecurringInvoiceItem[]
   invoices Invoice[]
+  services Service[]
 
   @@index([active, nextRunAt])
 }
@@ -765,4 +767,70 @@ model CustomFieldValue {
 
   @@unique([defId, entityId])
   @@index([entityId])
+}
+
+enum ServiceStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+/** A control panel this CRM can read from. Its API key is stored encrypted. */
+model ServerNode {
+  id            String    @id @default(cuid())
+  name          String
+  provider      String    @default("AAPANEL")
+  baseUrl       String
+  apiKeyEnc     String    @db.Text
+  active        Boolean   @default(true)
+  panelVersion  String?
+  lastCheckedAt DateTime?
+  lastStatus    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  services Service[]
+
+  @@index([active])
+}
+
+/** Something a client pays for that lives on a server, such as a hosting site. */
+model Service {
+  id           String        @id @default(cuid())
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serverNodeId String?
+  serverNode   ServerNode?   @relation(fields: [serverNodeId], references: [id], onDelete: SetNull)
+  name         String
+  domain       String?
+  status       ServiceStatus @default(ACTIVE)
+
+  /** Identifiers on the panel side, filled when mapped to an existing site. */
+  remoteId   String?
+  remoteName String?
+
+  recurringInvoiceId String?
+  recurringInvoice   RecurringInvoice? @relation(fields: [recurringInvoiceId], references: [id], onDelete: SetNull)
+
+  /** Read from the panel on each sync; never written back in this stage. */
+  remoteRunning  Boolean?
+  diskUsedBytes  Decimal?  @db.Decimal(20, 0)
+  diskQuotaBytes Decimal?  @db.Decimal(20, 0)
+  phpVersion     String?
+  sslIssuer      String?
+  sslExpiresAt   DateTime?
+  remoteExpiresAt DateTime?
+  lastSyncedAt   DateTime?
+  syncError      String?
+
+  notes     String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([serverNodeId, remoteId])
+  @@index([clientId])
+  @@index([status])
+  @@index([deletedAt])
 }

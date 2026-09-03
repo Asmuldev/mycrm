@@ -254,6 +254,18 @@ export default async function SettingsPage() {
         </div>
       </Card>
 
+      <Card className="mt-4">
+        <CardHeader
+          title="Server hosting"
+          description="Hubungkan aaPanel untuk memantau layanan klien"
+        />
+        <div className="px-5 py-4">
+          <Link href="/settings/servers" className={buttonClass("secondary")}>
+            Kelola server
+          </Link>
+        </div>
+      </Card>
+
       <AccountCard />
 
       {admin ? (

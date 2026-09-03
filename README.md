@@ -56,6 +56,28 @@ Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7, PostgreSQL.
   jalan di serverless) dengan logo dan warna aksen perusahaan; halaman
   `/invoices/[id]/print` untuk pratinjau dan cetak langsung.
 
+### Layanan hosting (aaPanel)
+- **Server** — daftarkan aaPanel di Pengaturan → Server. Kunci API disimpan
+  terenkripsi AES-256-GCM, tidak pernah ditampilkan lagi setelah disimpan.
+- **Layanan** — petakan situs yang sudah ada di panel ke klien yang membayarnya,
+  dan hubungkan ke langganan yang menagihnya.
+- **Sinkronisasi** — status berjalan/berhenti, pemakaian disk, versi PHP,
+  penerbit dan masa berlaku SSL, serta tanggal kedaluwarsa di panel. Berjalan
+  tiap 6 jam lewat cron, atau manual per server maupun per layanan.
+- **Peringatan SSL** — notifikasi untuk sertifikat yang berakhir dalam 21 hari.
+
+Tahap ini **hanya membaca** dari panel. Tidak ada satu pun tombol di aplikasi
+yang mengubah keadaan server.
+
+Catatan penting: aaPanel mewajibkan **whitelist IP**. IP server tempat aplikasi
+ini berjalan harus didaftarkan di Settings → API pada panel, jadi hosting dengan
+IP keluar yang berubah-ubah (Vercel dan serverless lain) tidak cocok.
+
+Diverifikasi terhadap aaPanel 8.0.6: permintaan memakai **POST** dengan
+`request_time` dalam **detik**, dan cookie sesi panel harus dikirim balik.
+Contoh Postman di situs aaPanel yang memakai milidetik lewat query string
+ditolak panel.
+
 ### Portal klien
 - **Tautan pribadi per klien** — klien membuka daftar invoicenya, mengunduh PDF,
   dan membayar lewat payment link tanpa perlu akun. Token diacak dan hanya
@@ -158,6 +180,7 @@ Akun seed: `admin@mycrm.test` / `password123`. Buka http://localhost:3000.
 | `AUTH_SECRET` | ya | Kunci tanda tangan sesi (`openssl rand -base64 32`) |
 | `APP_URL` | untuk email | Dipakai di tautan reset password dan footer email |
 | `APP_TIMEZONE` | tidak | Zona waktu perusahaan, default `Asia/Jakarta` |
+| `APP_ENCRYPTION_KEY` | untuk server hosting | Kunci enkripsi kredensial panel; jatuh ke `AUTH_SECRET` bila kosong |
 | `ERROR_WEBHOOK_URL` | tidak | Endpoint JSON penerima laporan error |
 | `BACKUP_DIR`, `BACKUP_KEEP` | tidak | Lokasi dan jumlah backup yang disimpan |
 | `PG_DUMP_PATH`, `PG_RESTORE_PATH` | tidak | Isi kalau binari Postgres tidak ada di PATH |
@@ -180,6 +203,7 @@ curl -H "x-cron-secret: $CRON_SECRET" https://domain-anda.com/api/cron/reminders
 | `/api/cron/reminders` | Tandai invoice lewat tempo dan kirim pengingat |
 | `/api/cron/recurring` | Terbitkan invoice langganan yang jatuh tempo, kedaluwarsakan penawaran |
 | `/api/cron/cleanup` | Bersihkan log lama sesuai masa retensi |
+| `/api/cron/services` | Sinkronkan layanan dari panel dan peringatkan SSL kedaluwarsa |
 
 Nomor dokumen (`INV`, `QUO`, `NK`) diambil dari tabel penghitung yang dinaikkan
 atomik. Kalau penghitung tertinggal — misalnya data diimpor dari sistem lain —
@@ -212,6 +236,7 @@ Notifikasi berulang untuk transaksi yang sama diabaikan supaya pembayaran tidak 
 | `npm run db:restore -- <file>` | Kembalikan dari dump (butuh `CONFIRM_RESTORE=yes`) |
 | `npm test` | Jalankan Vitest |
 | `npm run test:watch` | Vitest mode watch |
+| `npm run aapanel:probe` | Uji koneksi ke aaPanel dari mesin ini |
 
 ## Struktur
 
@@ -252,6 +277,9 @@ src/
     schedule.ts        kadensi langganan (murni, teruji)
     notifications.ts   notifikasi dalam aplikasi
     portal.ts          token portal klien
+    crypto.ts          enkripsi kredensial pihak ketiga
+    services.ts        sinkronisasi layanan dan peringatan SSL
+    providers/aapanel.ts  adapter aaPanel (baca-saja)
     custom-fields.ts   definisi dan nilai kolom kustom
     time.ts            batas hari di zona perusahaan
     money.ts           kalkulasi total, status, dan konversi mata uang

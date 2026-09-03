@@ -74,6 +74,9 @@ export const badgeTone: Record<string, string> = {
   PLANNING: "bg-slate-100 text-slate-700 ring-slate-200",
   ON_HOLD: "bg-amber-50 text-amber-700 ring-amber-200",
   ISSUED: "bg-sky-50 text-sky-700 ring-sky-200",
+  SUSPENDED: "bg-amber-50 text-amber-700 ring-amber-200",
+  TERMINATED: "bg-rose-50 text-rose-700 ring-rose-200",
+  PENDING: "bg-slate-100 text-slate-700 ring-slate-200",
   HIGH: "bg-rose-50 text-rose-700 ring-rose-200",
   MEDIUM: "bg-amber-50 text-amber-700 ring-amber-200",
   LOW: "bg-slate-100 text-slate-600 ring-slate-200",
@@ -134,4 +137,11 @@ export const customFieldEntityLabel: Record<string, string> = {
   DEAL: "Deal",
   PROJECT: "Proyek",
   INVOICE: "Invoice",
+};
+
+export const serviceStatusLabel: Record<string, string> = {
+  PENDING: "Menunggu",
+  ACTIVE: "Aktif",
+  SUSPENDED: "Ditangguhkan",
+  TERMINATED: "Dihentikan",
 };
