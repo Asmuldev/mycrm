@@ -1,5 +1,6 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/action-button";
@@ -487,5 +488,96 @@ export async function revokePortalLink(clientId: string, tokenId: string) {
     entityId: clientId,
     summary: "Mencabut tautan portal klien",
   });
+  revalidatePath(`/clients/${clientId}`);
+}
+
+export type ClientUserState = { error?: string; success?: string };
+
+/** Creates a portal account for someone on the client side. */
+export async function createClientUser(
+  clientId: string,
+  _prev: ClientUserState,
+  formData: FormData,
+): Promise<ClientUserState> {
+  const session = await requireSession();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (name.length < 2) return { error: "Nama minimal 2 karakter" };
+  if (!/^\S+@\S+\.\S+$/.test(email)) return { error: "Email tidak valid" };
+  if (password.length < 8) return { error: "Password minimal 8 karakter" };
+
+  const existing = await prisma.clientUser.findUnique({ where: { email } });
+  if (existing) return { error: "Email itu sudah dipakai akun portal lain" };
+
+  // A staff address must not double as a client login.
+  const staff = await prisma.user.findUnique({ where: { email } });
+  if (staff) {
+    return { error: "Email itu dipakai akun staf. Gunakan alamat lain." };
+  }
+
+  await prisma.clientUser.create({
+    data: {
+      clientId,
+      name,
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+    },
+  });
+
+  await recordAudit(session, {
+    action: "client_user.create",
+    entity: "Client",
+    entityId: clientId,
+    summary: `Membuat akun portal ${email}`,
+  });
+
+  revalidatePath(`/clients/${clientId}`);
+  return { success: `Akun portal ${email} dibuat` };
+}
+
+export async function toggleClientUser(
+  clientId: string,
+  userId: string,
+): Promise<ActionResult> {
+  const session = await requireSession();
+  const user = await prisma.clientUser.findUnique({ where: { id: userId } });
+  if (!user) return { error: "Akun tidak ditemukan" };
+
+  await prisma.clientUser.update({
+    where: { id: userId },
+    data: {
+      active: !user.active,
+      // Switching an account off must end its live sessions too.
+      sessionVersion: { increment: 1 },
+    },
+  });
+
+  await recordAudit(session, {
+    action: "client_user.toggle",
+    entity: "Client",
+    entityId: clientId,
+    summary: `${user.active ? "Menonaktifkan" : "Mengaktifkan"} akun portal ${user.email}`,
+  });
+
+  revalidatePath(`/clients/${clientId}`);
+}
+
+export async function deleteClientUser(
+  clientId: string,
+  userId: string,
+): Promise<ActionResult> {
+  const session = await requireSession();
+  const user = await prisma.clientUser.delete({ where: { id: userId } });
+
+  await recordAudit(session, {
+    action: "client_user.delete",
+    entity: "Client",
+    entityId: clientId,
+    summary: `Menghapus akun portal ${user.email}`,
+  });
+
   revalidatePath(`/clients/${clientId}`);
 }

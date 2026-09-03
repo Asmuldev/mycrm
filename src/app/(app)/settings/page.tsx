@@ -152,6 +152,48 @@ export default async function SettingsPage() {
 
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="mb-3 text-xs font-medium text-slate-700">
+                Penangguhan layanan otomatis
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  label="Tangguhkan setelah lewat tempo (hari)"
+                  hint="Dihitung dari jatuh tempo invoice langganannya"
+                >
+                  <Input
+                    name="autoSuspendAfterDays"
+                    type="number"
+                    min="0"
+                    defaultValue={profile.autoSuspendAfterDays}
+                  />
+                </Field>
+              </div>
+              <label className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  name="autoSuspendEnabled"
+                  defaultChecked={profile.autoSuspendEnabled}
+                  className="rounded"
+                />
+                Aktifkan penangguhan otomatis di server hosting
+              </label>
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  name="autoResumeOnPayment"
+                  defaultChecked={profile.autoResumeOnPayment}
+                  className="rounded"
+                />
+                Aktifkan kembali otomatis begitu tagihan lunas
+              </label>
+              <p className="mt-2 text-xs text-slate-500">
+                Selama tidak diaktifkan, aplikasi hanya melaporkan layanan mana
+                yang akan ditangguhkan tanpa menyentuh server. Lihat daftarnya di
+                halaman Layanan.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="mb-3 text-xs font-medium text-slate-700">
                 Denda keterlambatan
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

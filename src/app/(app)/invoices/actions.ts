@@ -14,6 +14,7 @@ import { sendInvoiceEmail } from "@/lib/invoice-mailer";
 import { computeLateFee, invoiceBalance } from "@/lib/money";
 import { createPaymentLink } from "@/lib/payment";
 import { requireAdmin } from "@/lib/permissions";
+import { resumeServicesForInvoice } from "@/lib/suspension";
 import { prisma } from "@/lib/prisma";
 import { startOfToday } from "@/lib/time";
 import type { InvoiceStatus } from "@/generated/prisma/client";
@@ -167,9 +168,13 @@ export async function addPayment(invoiceId: string, formData: FormData) {
   });
 
   await recalcInvoice(invoiceId);
+  // A payment that clears the account brings suspended services back.
+  await resumeServicesForInvoice(invoiceId);
+
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/invoices");
   revalidatePath("/dashboard");
+  revalidatePath("/services");
 }
 
 export async function deletePayment(invoiceId: string, paymentId: string) {

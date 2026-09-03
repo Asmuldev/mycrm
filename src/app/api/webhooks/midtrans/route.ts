@@ -7,6 +7,7 @@ import {
   type MidtransNotification,
 } from "@/lib/payment";
 import { notify } from "@/lib/notifications";
+import { resumeServicesForInvoice } from "@/lib/suspension";
 import { reportError } from "@/lib/observability";
 import { prisma } from "@/lib/prisma";
 
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
   });
 
   await recalcInvoice(invoice.id);
+  const resumed = await resumeServicesForInvoice(invoice.id);
   await notify({
     kind: "payment_received",
     title: `Pembayaran masuk untuk ${invoice.number}`,
@@ -75,5 +77,5 @@ export async function POST(request: Request) {
     summary: `Pembayaran Midtrans ${body.gross_amount} untuk ${invoice.number}`,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, resumedServices: resumed });
 }

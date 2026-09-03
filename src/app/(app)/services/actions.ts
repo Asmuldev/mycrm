@@ -9,6 +9,7 @@ import { optionalString } from "@/lib/format";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { syncServerNode } from "@/lib/services";
+import { resumeService, suspendService } from "@/lib/suspension";
 import type { ServiceStatus } from "@/generated/prisma/client";
 
 /**
@@ -113,4 +114,39 @@ export async function deleteService(id: string): Promise<ActionResult> {
 
   revalidatePath("/services");
   redirect("/services");
+}
+
+/** Manual suspend from the service page, for cases the schedule does not cover. */
+export async function suspendServiceNow(id: string): Promise<ActionResult> {
+  const session = await requireSession();
+  const result = await suspendService(id, "Ditangguhkan manual oleh staf", session);
+
+  revalidatePath(`/services/${id}`);
+  revalidatePath("/services");
+
+  if ("error" in result && result.error) return { error: result.error };
+  return { success: "Layanan ditangguhkan di server" };
+}
+
+export async function resumeServiceNow(id: string): Promise<ActionResult> {
+  const session = await requireSession();
+  const result = await resumeService(id, "Diaktifkan manual oleh staf", session);
+
+  revalidatePath(`/services/${id}`);
+  revalidatePath("/services");
+
+  if ("error" in result && result.error) return { error: result.error };
+  return { success: "Layanan aktif kembali" };
+}
+
+export async function toggleSuspendExempt(id: string): Promise<ActionResult> {
+  await requireSession();
+  const service = await prisma.service.findUnique({ where: { id } });
+  if (!service) return { error: "Layanan tidak ditemukan" };
+
+  await prisma.service.update({
+    where: { id },
+    data: { autoSuspendExempt: !service.autoSuspendExempt },
+  });
+  revalidatePath(`/services/${id}`);
 }

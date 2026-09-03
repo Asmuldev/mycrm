@@ -66,8 +66,15 @@ Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Prisma 7, PostgreSQL.
   tiap 6 jam lewat cron, atau manual per server maupun per layanan.
 - **Peringatan SSL** — notifikasi untuk sertifikat yang berakhir dalam 21 hari.
 
-Tahap ini **hanya membaca** dari panel. Tidak ada satu pun tombol di aplikasi
-yang mengubah keadaan server.
+- **Penangguhan otomatis** — layanan yang tagihannya lewat jatuh tempo sekian
+  hari dihentikan di panel, dan aktif lagi begitu tagihan lunas. **Nonaktif
+  secara bawaan**: selama belum diaktifkan di Pengaturan, aplikasi hanya
+  melaporkan layanan mana yang akan ditangguhkan tanpa menyentuh server.
+- **Kendali manual** per layanan, plus penanda pengecualian untuk layanan yang
+  tidak boleh ikut penangguhan otomatis.
+
+Menghentikan situs hanya menonaktifkan vhost. File dan database tidak disentuh,
+jadi mengaktifkan kembali memulihkan situs persis seperti semula.
 
 Catatan penting: aaPanel mewajibkan **whitelist IP**. IP server tempat aplikasi
 ini berjalan harus didaftarkan di Settings → API pada panel, jadi hosting dengan
@@ -79,11 +86,24 @@ Contoh Postman di situs aaPanel yang memakai milidetik lewat query string
 ditolak panel.
 
 ### Portal klien
-- **Tautan pribadi per klien** — klien membuka daftar invoicenya, mengunduh PDF,
-  dan membayar lewat payment link tanpa perlu akun. Token diacak dan hanya
-  disimpan dalam bentuk hash, ditampilkan sekali saat dibuat, bisa diberi masa
-  berlaku, dan bisa dicabut. Invoice draft tidak pernah terlihat, dan satu token
-  tidak bisa membuka data klien lain.
+Dua cara masuk, dengan tampilan yang sama persis karena keduanya memakai
+komponen dan pemuat data yang sama:
+
+- **Akun portal** — klien login dengan email dan password di `/portal/login`.
+  Sesinya memakai cookie, kunci tanda tangan, dan tabel pengguna yang **terpisah
+  penuh** dari akun staf, sehingga kekeliruan di satu sisi tidak bisa melebarkan
+  akses di sisi lain. Menonaktifkan akun langsung mematikan sesi yang berjalan.
+- **Tautan pribadi** — untuk klien yang tidak mau punya akun. Token diacak,
+  disimpan sebagai hash, ditampilkan sekali, bisa diberi masa berlaku dan
+  dicabut.
+
+Isinya: ringkasan tagihan dan saldo uang muka, daftar layanan hosting beserta
+status dan masa berlaku SSL, daftar invoice, halaman rincian per invoice dengan
+riwayat pembayaran dan jadwal termin, unduh PDF, tombol bayar, dan **unggah
+bukti transfer** yang langsung memberi notifikasi ke staf.
+
+Invoice draft tidak pernah terlihat, dan tidak ada jalur — halaman maupun PDF —
+yang bisa dipakai satu klien untuk membuka data klien lain.
 
 ### Laporan & operasional
 - **Dashboard** — klien, pipeline, deal menang, piutang, invoice belum lunas,
@@ -203,7 +223,7 @@ curl -H "x-cron-secret: $CRON_SECRET" https://domain-anda.com/api/cron/reminders
 | `/api/cron/reminders` | Tandai invoice lewat tempo dan kirim pengingat |
 | `/api/cron/recurring` | Terbitkan invoice langganan yang jatuh tempo, kedaluwarsakan penawaran |
 | `/api/cron/cleanup` | Bersihkan log lama sesuai masa retensi |
-| `/api/cron/services` | Sinkronkan layanan dari panel dan peringatkan SSL kedaluwarsa |
+| `/api/cron/services` | Sinkronkan layanan dari panel, peringatkan SSL kedaluwarsa, jalankan penangguhan otomatis |
 
 Nomor dokumen (`INV`, `QUO`, `NK`) diambil dari tabel penghitung yang dinaikkan
 atomik. Kalau penghitung tertinggal — misalnya data diimpor dari sistem lain —
@@ -255,7 +275,7 @@ src/
                        quotes, invoices, credit-notes, recurring, expenses,
                        tasks, calendar, reports, notifications, audit, trash,
                        settings
-  app/portal/          portal klien, diakses lewat token tanpa login
+  app/portal/          portal klien: login akun dan tautan token
   app/api/             pdf, ekspor CSV, lampiran, pencarian, cron, webhook
   components/          komponen UI bersama, command palette, theme toggle
   lib/
@@ -279,6 +299,9 @@ src/
     portal.ts          token portal klien
     crypto.ts          enkripsi kredensial pihak ketiga
     services.ts        sinkronisasi layanan dan peringatan SSL
+    suspension.ts      penangguhan dan pengaktifan kembali layanan
+    client-session.ts  sesi portal klien, terpisah dari sesi staf
+    portal-data.ts     pemuat data portal yang dipakai kedua jalur masuk
     providers/aapanel.ts  adapter aaPanel (baca-saja)
     custom-fields.ts   definisi dan nilai kolom kustom
     time.ts            batas hari di zona perusahaan

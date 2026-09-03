@@ -34,6 +34,12 @@ export async function updateCompanyProfile(formData: FormData) {
     reminderEnabled: formData.get("reminderEnabled") === "on",
     reminderDaysBefore: Math.max(toNumber(formData.get("reminderDaysBefore"), 3), 0),
     reminderDaysAfter: Math.max(toNumber(formData.get("reminderDaysAfter"), 7), 0),
+    autoSuspendEnabled: formData.get("autoSuspendEnabled") === "on",
+    autoSuspendAfterDays: Math.max(
+      toNumber(formData.get("autoSuspendAfterDays"), 7),
+      0,
+    ),
+    autoResumeOnPayment: formData.get("autoResumeOnPayment") === "on",
     lateFeeEnabled: formData.get("lateFeeEnabled") === "on",
     lateFeePercent: Math.max(toNumber(formData.get("lateFeePercent")), 0).toFixed(2),
     lateFeeGraceDays: Math.max(toNumber(formData.get("lateFeeGraceDays"), 7), 0),

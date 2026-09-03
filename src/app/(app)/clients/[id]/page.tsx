@@ -43,6 +43,7 @@ import {
   revokePortalLink,
 } from "../actions";
 import { PortalLinkCard } from "./portal-card";
+import { ClientUsersCard } from "./client-users-card";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export default async function ClientDetailPage({
         include: { applications: true },
       },
       portalTokens: { orderBy: { createdAt: "desc" } },
+      users: { orderBy: { createdAt: "asc" } },
       attachments: { orderBy: { createdAt: "desc" } },
       contacts: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }] },
       deals: { where: { deletedAt: null }, orderBy: { updatedAt: "desc" } },
@@ -622,6 +624,17 @@ export default async function ClientDetailPage({
               </div>
             </form>
           </Card>
+
+          <ClientUsersCard
+            clientId={client.id}
+            users={client.users.map((user) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              active: user.active,
+              lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+            }))}
+          />
 
           <PortalLinkCard clientId={client.id} appUrl={appUrl}>
             {client.portalTokens.length === 0 ? null : (

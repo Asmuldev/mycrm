@@ -17,7 +17,14 @@ import {
 } from "@/components/ui";
 import { ActionButton } from "@/components/action-button";
 import { CustomFieldsCard } from "@/components/custom-fields-card";
-import { deleteService, syncService } from "../actions";
+import {
+  deleteService,
+  resumeServiceNow,
+  suspendServiceNow,
+  syncService,
+  toggleSuspendExempt,
+} from "../actions";
+import { getCompanyProfile } from "@/lib/invoice";
 
 export const dynamic = "force-dynamic";
 
@@ -50,8 +57,13 @@ export default async function ServiceDetailPage({
       })
     : [];
 
+  const profile = await getCompanyProfile();
   const sync = syncService.bind(null, service.id);
   const remove = deleteService.bind(null, service.id);
+  const suspend = suspendServiceNow.bind(null, service.id);
+  const resume = resumeServiceNow.bind(null, service.id);
+  const toggleExempt = toggleSuspendExempt.bind(null, service.id);
+  const controllable = Boolean(service.serverNodeId && service.remoteId);
 
   return (
     <div className="max-w-4xl">
@@ -81,6 +93,13 @@ export default async function ServiceDetailPage({
           </div>
         }
       />
+
+      {service.suspendedAt ? (
+        <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Ditangguhkan {formatDateTime(service.suspendedAt)}
+          {service.suspendReason ? ` · ${service.suspendReason}` : ""}
+        </p>
+      ) : null}
 
       {service.syncError ? (
         <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
@@ -212,6 +231,62 @@ export default async function ServiceDetailPage({
         </div>
 
         <div className="space-y-4">
+          <Card>
+            <CardHeader
+              title="Kendali layanan"
+              description="Menghentikan situs hanya menonaktifkan vhost; file dan database tetap utuh"
+            />
+            <div className="space-y-3 px-5 py-4">
+              {controllable ? (
+                <div className="flex flex-wrap gap-2">
+                  {service.remoteRunning === false ? (
+                    <ActionButton
+                      action={resume}
+                      variant="secondary"
+                      className="px-2 py-1 text-xs"
+                      pendingLabel="Mengaktifkan..."
+                    >
+                      Aktifkan situs
+                    </ActionButton>
+                  ) : (
+                    <ActionButton
+                      action={suspend}
+                      message={`Hentikan situs ${service.domain ?? service.name}? Pengunjung akan melihat halaman error sampai diaktifkan lagi.`}
+                      variant="secondary"
+                      className="px-2 py-1 text-xs"
+                      pendingLabel="Menangguhkan..."
+                    >
+                      Tangguhkan situs
+                    </ActionButton>
+                  )}
+                  <ActionButton
+                    action={toggleExempt}
+                    variant="ghost"
+                    className="px-2 py-1 text-xs"
+                    pendingLabel="..."
+                  >
+                    {service.autoSuspendExempt
+                      ? "Ikutkan penangguhan otomatis"
+                      : "Kecualikan dari penangguhan otomatis"}
+                  </ActionButton>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Layanan ini belum dipetakan ke situs di panel, jadi belum bisa
+                  dikendalikan dari sini.
+                </p>
+              )}
+
+              <p className="text-xs text-slate-500">
+                {service.autoSuspendExempt
+                  ? "Dikecualikan dari penangguhan otomatis."
+                  : profile.autoSuspendEnabled
+                    ? `Akan ditangguhkan otomatis kalau tagihan lewat ${profile.autoSuspendAfterDays} hari dari jatuh tempo.`
+                    : "Penangguhan otomatis sedang nonaktif di Pengaturan."}
+              </p>
+            </div>
+          </Card>
+
           <Card>
             <CardHeader title="Detail panel" />
             <dl className="space-y-3 px-5 py-4 text-sm">

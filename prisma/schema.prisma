@@ -112,6 +112,7 @@ model Client {
   credits      ClientCredit[]
   portalTokens PortalToken[]
   services     Service[]
+  users        ClientUser[]
 
   @@index([status])
   @@index([name])
@@ -317,6 +318,9 @@ model CompanyProfile {
   reminderEnabled     Boolean @default(true)
   reminderDaysBefore  Int     @default(3)
   reminderDaysAfter   Int     @default(7)
+  autoSuspendEnabled   Boolean @default(false)
+  autoSuspendAfterDays Int     @default(7)
+  autoResumeOnPayment  Boolean @default(true)
   lateFeeEnabled      Boolean @default(false)
   lateFeePercent      Decimal @default(0) @db.Decimal(5, 2)
   lateFeeGraceDays    Int     @default(7)
@@ -460,6 +464,8 @@ model Attachment {
   expense      Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   uploadedById String?
   uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  /** True when the client uploaded it through the portal, not staff. */
+  clientUploaded Boolean @default(false)
   createdAt    DateTime @default(now())
 
   @@index([clientId])
@@ -824,6 +830,12 @@ model Service {
   lastSyncedAt   DateTime?
   syncError      String?
 
+  /** Set when this app suspended the site, so it knows what it may resume. */
+  suspendedAt       DateTime?
+  suspendReason     String?
+  /** Keeps a service out of automatic suspension regardless of overdue bills. */
+  autoSuspendExempt Boolean   @default(false)
+
   notes     String?
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -833,4 +845,25 @@ model Service {
   @@index([clientId])
   @@index([status])
   @@index([deletedAt])
+}
+
+/**
+ * A person on the client side who signs in to the portal. Deliberately a
+ * separate table from User: staff scope must never be reachable by widening a
+ * client's role, and a bug in one login path cannot grant the other.
+ */
+model ClientUser {
+  id             String    @id @default(cuid())
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  email          String    @unique
+  name           String
+  passwordHash   String
+  active         Boolean   @default(true)
+  sessionVersion Int       @default(0)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([clientId])
 }

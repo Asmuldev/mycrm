@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { serviceStatusLabel } from "@/lib/labels";
 import { formatBytes } from "@/lib/services";
+import { findSuspensionCandidates } from "@/lib/suspension";
+import { getCompanyProfile } from "@/lib/invoice";
 import { startOfDaysFromToday } from "@/lib/time";
 import { PAGE_SIZE, Pagination, readPage } from "@/components/pagination";
 import {
@@ -33,7 +35,9 @@ export default async function ServicesPage({
   }
 
   const sslCutoff = startOfDaysFromToday(21);
-  const [total, services, expiringSoon] = await Promise.all([
+  const [profile, candidates, total, services, expiringSoon] = await Promise.all([
+    getCompanyProfile(),
+    findSuspensionCandidates(),
     prisma.service.count({ where }),
     prisma.service.findMany({
       where,
@@ -57,6 +61,26 @@ export default async function ServicesPage({
         description={`${total} layanan klien`}
         action={<LinkButton href="/services/new">+ Layanan baru</LinkButton>}
       />
+
+      {candidates.length > 0 ? (
+        <div className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          <p className="font-medium">
+            {candidates.length} layanan menunggak lebih dari{" "}
+            {profile.autoSuspendAfterDays} hari
+            {profile.autoSuspendEnabled
+              ? " dan akan ditangguhkan otomatis."
+              : ". Penangguhan otomatis sedang nonaktif, jadi tidak ada yang disentuh."}
+          </p>
+          <ul className="mt-1 list-inside list-disc">
+            {candidates.slice(0, 5).map((candidate) => (
+              <li key={candidate.serviceId}>
+                {candidate.serviceName} · {candidate.clientName} · invoice{" "}
+                {candidate.invoiceNumber} telat {candidate.daysOverdue} hari
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {expiringSoon > 0 ? (
         <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">

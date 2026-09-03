@@ -8,7 +8,9 @@ import { createHash } from "node:crypto";
  * cookie back on later calls. The vendor's Postman sample uses milliseconds and
  * query parameters; that combination is rejected.
  *
- * Every method here is read-only. Nothing in this file changes server state.
+ * Read methods are safe to call at will. `suspendSite` and `resumeSite` change
+ * what the server serves, and are the only two places in this codebase that
+ * alter a customer's hosting.
  */
 const TIMEOUT_MS = 15_000;
 
@@ -144,6 +146,24 @@ export class AapanelClient {
       { limit: String(limit), p: "1" },
     );
     return result.data ?? [];
+  }
+
+  /**
+   * Stops a site from serving. Files and databases are untouched — only the
+   * vhost is disabled — so resuming restores the site exactly as it was.
+   */
+  async suspendSite(input: { id: string; name: string }) {
+    return this.call<{ status?: boolean; msg?: string }>(
+      "/site?action=SiteStop",
+      { id: input.id, name: input.name },
+    );
+  }
+
+  async resumeSite(input: { id: string; name: string }) {
+    return this.call<{ status?: boolean; msg?: string }>(
+      "/site?action=SiteStart",
+      { id: input.id, name: input.name },
+    );
   }
 }
 
