@@ -1,26 +1,205 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+ * Theming works by routing the handful of colour utilities this app actually
+ * uses through CSS variables. Dark mode then only has to redefine the
+ * variables, and `.force-light` (used by the invoice paper preview) can pull
+ * them back to the light values so a printed document always looks like paper.
+ * These rules live outside `@layer`, so they win over Tailwind's utilities.
+ */
+:root,
+.force-light {
+  --c-app-bg: #f8fafc;
+  --c-surface: #ffffff;
+  --c-surface-2: #f8fafc;
+  --c-surface-3: #f1f5f9;
+  --c-surface-4: #e2e8f0;
+  --c-inverse: #0f172a;
+  --c-inverse-2: #1e293b;
+  --c-inverse-3: #334155;
+  --c-on-inverse: #ffffff;
+
+  --c-text-900: #0f172a;
+  --c-text-800: #1e293b;
+  --c-text-700: #334155;
+  --c-text-600: #475569;
+  --c-text-500: #64748b;
+  --c-text-400: #94a3b8;
+  --c-text-100: #f1f5f9;
+
+  --c-border: #e2e8f0;
+  --c-border-soft: #f1f5f9;
+  --c-border-strong: #cbd5e1;
+  --c-border-mid: #94a3b8;
+  --c-border-dark: #334155;
+  --c-border-darker: #1e293b;
+
+  --c-emerald-bg: #ecfdf5;
+  --c-emerald-text: #047857;
+  --c-emerald-text-strong: #065f46;
+  --c-emerald-ring: #a7f3d0;
+  --c-rose-bg: #fff1f2;
+  --c-rose-text: #be123c;
+  --c-rose-text-strong: #9f1239;
+  --c-rose-text-soft: #e11d48;
+  --c-rose-ring: #fecdd3;
+  --c-sky-bg: #f0f9ff;
+  --c-sky-text: #0369a1;
+  --c-sky-text-strong: #075985;
+  --c-sky-ring: #bae6fd;
+  --c-amber-bg: #fffbeb;
+  --c-amber-text: #b45309;
+  --c-amber-text-strong: #92400e;
+  --c-amber-ring: #fde68a;
+  --c-violet-bg: #f5f3ff;
+  --c-violet-text: #6d28d9;
+  --c-violet-ring: #ddd6fe;
+  --c-zinc-bg: #f4f4f5;
+  --c-zinc-text: #52525b;
+  --c-zinc-ring: #e4e4e7;
 }
 
+.dark {
+  --c-app-bg: #0b1220;
+  --c-surface: #111c2e;
+  --c-surface-2: #16233a;
+  --c-surface-3: #1e2f4a;
+  --c-surface-4: #274060;
+  --c-inverse: #475569;
+  --c-inverse-2: #334155;
+  --c-inverse-3: #1e293b;
+  --c-on-inverse: #ffffff;
+
+  --c-text-900: #f1f5f9;
+  --c-text-800: #e2e8f0;
+  --c-text-700: #cbd5e1;
+  --c-text-600: #b6c2d4;
+  --c-text-500: #94a3b8;
+  --c-text-400: #7d8da3;
+  --c-text-100: #1e293b;
+
+  --c-border: #24334d;
+  --c-border-soft: #1c2941;
+  --c-border-strong: #334966;
+  --c-border-mid: #48607f;
+  --c-border-dark: #24334d;
+  --c-border-darker: #1c2941;
+
+  --c-emerald-bg: #06281f;
+  --c-emerald-text: #6ee7b7;
+  --c-emerald-text-strong: #a7f3d0;
+  --c-emerald-ring: #12523f;
+  --c-rose-bg: #2c0d16;
+  --c-rose-text: #fda4af;
+  --c-rose-text-strong: #fecdd3;
+  --c-rose-text-soft: #fb7185;
+  --c-rose-ring: #5c1b2a;
+  --c-sky-bg: #06243a;
+  --c-sky-text: #7dd3fc;
+  --c-sky-text-strong: #bae6fd;
+  --c-sky-ring: #10466b;
+  --c-amber-bg: #2e1e05;
+  --c-amber-text: #fcd34d;
+  --c-amber-text-strong: #fde68a;
+  --c-amber-ring: #5a3c0c;
+  --c-violet-bg: #1d1338;
+  --c-violet-text: #c4b5fd;
+  --c-violet-ring: #3d2a70;
+  --c-zinc-bg: #1c1f26;
+  --c-zinc-text: #a1a1aa;
+  --c-zinc-ring: #33363d;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--c-app-bg);
+  color: var(--c-text-900);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.dark {
+  color-scheme: dark;
+}
+.force-light {
+  color-scheme: light;
+}
+
+.bg-white { background-color: var(--c-surface); }
+.bg-slate-50 { background-color: var(--c-surface-2); }
+.bg-slate-50\/70 { background-color: color-mix(in srgb, var(--c-surface-2) 70%, transparent); }
+.bg-slate-100 { background-color: var(--c-surface-3); }
+.bg-slate-100\/70 { background-color: color-mix(in srgb, var(--c-surface-3) 70%, transparent); }
+.bg-slate-200 { background-color: var(--c-surface-4); }
+.bg-slate-700 { background-color: var(--c-inverse-3); }
+.bg-slate-800 { background-color: var(--c-inverse-2); }
+.bg-slate-800\/60 { background-color: color-mix(in srgb, var(--c-inverse-2) 60%, transparent); }
+.bg-slate-900 { background-color: var(--c-inverse); }
+
+.text-white { color: var(--c-on-inverse); }
+.text-slate-900 { color: var(--c-text-900); }
+.text-slate-800 { color: var(--c-text-800); }
+.text-slate-700 { color: var(--c-text-700); }
+.text-slate-600 { color: var(--c-text-600); }
+.text-slate-500 { color: var(--c-text-500); }
+.text-slate-400 { color: var(--c-text-400); }
+.text-slate-100 { color: var(--c-text-100); }
+
+.border-slate-100 { border-color: var(--c-border-soft); }
+.border-slate-200 { border-color: var(--c-border); }
+.border-slate-300 { border-color: var(--c-border-strong); }
+.border-slate-400 { border-color: var(--c-border-mid); }
+.border-slate-700 { border-color: var(--c-border-dark); }
+.border-slate-800 { border-color: var(--c-border-darker); }
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--c-border-soft); }
+.ring-slate-200 { --tw-ring-color: var(--c-border); }
+
+.bg-emerald-50 { background-color: var(--c-emerald-bg); }
+.text-emerald-700 { color: var(--c-emerald-text); }
+.text-emerald-800 { color: var(--c-emerald-text-strong); }
+.ring-emerald-200 { --tw-ring-color: var(--c-emerald-ring); }
+.bg-rose-50 { background-color: var(--c-rose-bg); }
+.text-rose-600 { color: var(--c-rose-text-soft); }
+.text-rose-700 { color: var(--c-rose-text); }
+.text-rose-800 { color: var(--c-rose-text-strong); }
+.ring-rose-200 { --tw-ring-color: var(--c-rose-ring); }
+.bg-sky-50 { background-color: var(--c-sky-bg); }
+.text-sky-700 { color: var(--c-sky-text); }
+.text-sky-800 { color: var(--c-sky-text-strong); }
+.ring-sky-200 { --tw-ring-color: var(--c-sky-ring); }
+.bg-amber-50 { background-color: var(--c-amber-bg); }
+.text-amber-700 { color: var(--c-amber-text); }
+.text-amber-800 { color: var(--c-amber-text-strong); }
+.ring-amber-200 { --tw-ring-color: var(--c-amber-ring); }
+.bg-violet-50 { background-color: var(--c-violet-bg); }
+.text-violet-700 { color: var(--c-violet-text); }
+.ring-violet-200 { --tw-ring-color: var(--c-violet-ring); }
+.bg-zinc-100 { background-color: var(--c-zinc-bg); }
+.text-zinc-600 { color: var(--c-zinc-text); }
+.ring-zinc-200 { --tw-ring-color: var(--c-zinc-ring); }
+
+/* Form controls do not inherit the page palette on their own. */
+input,
+select,
+textarea {
+  color: var(--c-text-900);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #ffffff;
+  }
+  .print-area {
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
 }
