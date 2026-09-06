@@ -318,6 +318,10 @@ model CompanyProfile {
   reminderEnabled     Boolean @default(true)
   reminderDaysBefore  Int     @default(3)
   reminderDaysAfter   Int     @default(7)
+  waCountryCode        String  @default("62")
+  waInvoiceTemplate    String? @db.Text
+  waReminderTemplate   String? @db.Text
+  waQuoteTemplate      String? @db.Text
   autoSuspendEnabled   Boolean @default(false)
   autoSuspendAfterDays Int     @default(7)
   autoResumeOnPayment  Boolean @default(true)

@@ -13,6 +13,12 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
+import { WhatsappButton } from "@/components/whatsapp-button";
+import { getCompanyProfile } from "@/lib/invoice";
+import {
+  buildQuoteWhatsapp,
+  pickWhatsappNumber,
+} from "@/lib/whatsapp-message";
 import { SubmitButton } from "@/components/submit-button";
 import {
   convertQuoteToInvoice,
@@ -33,13 +39,30 @@ export default async function QuoteDetailPage({
   const quote = await prisma.quote.findUnique({
     where: { id },
     include: {
-      client: true,
+      client: {
+        include: { contacts: { where: { isPrimary: true }, take: 1 } },
+      },
       deal: { select: { id: true, title: true } },
       items: { orderBy: { position: "asc" } },
       invoice: { select: { id: true, number: true } },
     },
   });
   if (!quote || quote.deletedAt) notFound();
+
+  const profile = await getCompanyProfile();
+  const whatsapp = buildQuoteWhatsapp({
+    profile,
+    clientName: quote.client.name,
+    number: quote.number,
+    total: quote.total,
+    currency: quote.currency,
+    validUntil: quote.validUntil,
+    phone: pickWhatsappNumber(
+      quote.client,
+      quote.client.contacts[0]?.phone,
+      profile.waCountryCode,
+    ),
+  });
 
   const convert = convertQuoteToInvoice.bind(null, quote.id);
   const accept = setQuoteStatus.bind(null, quote.id, "ACCEPTED");
@@ -53,6 +76,11 @@ export default async function QuoteDetailPage({
         description={`${quote.client.name} · ${quoteStatusLabel[quote.status]}`}
         action={
           <div className="flex flex-wrap gap-2">
+            <WhatsappButton
+              href={whatsapp.href}
+              message={whatsapp.message}
+              label="WhatsApp"
+            />
             <LinkButton href={`/quotes/${quote.id}/pdf`}>Unduh PDF</LinkButton>
             <LinkButton href={`/quotes/${quote.id}/edit`} variant="secondary">
               Edit

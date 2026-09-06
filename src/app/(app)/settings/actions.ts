@@ -34,6 +34,11 @@ export async function updateCompanyProfile(formData: FormData) {
     reminderEnabled: formData.get("reminderEnabled") === "on",
     reminderDaysBefore: Math.max(toNumber(formData.get("reminderDaysBefore"), 3), 0),
     reminderDaysAfter: Math.max(toNumber(formData.get("reminderDaysAfter"), 7), 0),
+    waCountryCode:
+      String(formData.get("waCountryCode") ?? "62").replace(/\D/g, "") || "62",
+    waInvoiceTemplate: optionalString(formData.get("waInvoiceTemplate")),
+    waReminderTemplate: optionalString(formData.get("waReminderTemplate")),
+    waQuoteTemplate: optionalString(formData.get("waQuoteTemplate")),
     autoSuspendEnabled: formData.get("autoSuspendEnabled") === "on",
     autoSuspendAfterDays: Math.max(
       toNumber(formData.get("autoSuspendAfterDays"), 7),

@@ -22,6 +22,11 @@ import { requireSession } from "@/lib/auth";
 import { invoiceBalance } from "@/lib/money";
 import { isPaymentGatewayConfigured } from "@/lib/payment";
 import { CustomFieldsCard } from "@/components/custom-fields-card";
+import { WhatsappButton } from "@/components/whatsapp-button";
+import {
+  buildInvoiceWhatsapp,
+  pickWhatsappNumber,
+} from "@/lib/whatsapp-message";
 import { computeLateFee } from "@/lib/money";
 import { startOfToday } from "@/lib/time";
 import { getCompanyProfile } from "@/lib/invoice";
@@ -54,7 +59,11 @@ export default async function InvoiceDetailPage({
   const invoice = await prisma.invoice.findUnique({
     where: { id },
     include: {
-      client: true,
+      client: {
+        include: {
+          contacts: { where: { isPrimary: true }, take: 1 },
+        },
+      },
       items: { orderBy: { position: "asc" } },
       payments: { orderBy: { paidAt: "desc" } },
       schedules: { orderBy: { position: "asc" } },
@@ -78,6 +87,25 @@ export default async function InvoiceDetailPage({
   const chargeLateFee = applyLateFee.bind(null, invoice.id);
   const removeLateFee = clearLateFee.bind(null, invoice.id);
 
+  const waNumber = pickWhatsappNumber(
+    invoice.client,
+    invoice.client.contacts[0]?.phone,
+    profile.waCountryCode,
+  );
+  const whatsapp = buildInvoiceWhatsapp({
+    profile,
+    clientName: invoice.client.name,
+    number: invoice.number,
+    total: invoice.total,
+    balance,
+    currency: invoice.currency,
+    dueDate: invoice.dueDate,
+    paymentLinkUrl: invoice.paymentLinkUrl,
+    phone: waNumber,
+    // Once an invoice has gone out, the reminder wording fits better.
+    reminder: invoice.status !== "DRAFT" && balance > 0 && invoice.sentAt !== null,
+  });
+
   const pendingLateFee = profile.lateFeeEnabled
     ? computeLateFee({
         outstanding: balance,
@@ -95,6 +123,11 @@ export default async function InvoiceDetailPage({
         description={`${invoice.client.name} · ${invoiceStatusLabel[invoice.status]}`}
         action={
           <div className="no-print flex flex-wrap gap-2">
+            <WhatsappButton
+              href={whatsapp.href}
+              message={whatsapp.message}
+              label="WhatsApp"
+            />
             <LinkButton href={`/invoices/${invoice.id}/pdf`}>
               Unduh PDF
             </LinkButton>

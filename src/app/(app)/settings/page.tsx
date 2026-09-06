@@ -17,6 +17,12 @@ import {
 } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { updateCompanyProfile } from "./actions";
+import {
+  DEFAULT_INVOICE_TEMPLATE,
+  DEFAULT_QUOTE_TEMPLATE,
+  DEFAULT_REMINDER_TEMPLATE,
+  TEMPLATE_PLACEHOLDERS,
+} from "@/lib/whatsapp";
 import { AccountCard } from "./account-card";
 import { LogoCard } from "./logo-card";
 import { UsersCard } from "./users-card";
@@ -149,6 +155,57 @@ export default async function SettingsPage() {
                 placeholder="Pembayaran dilakukan maksimal 14 hari setelah invoice diterbitkan."
               />
             </Field>
+
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="mb-1 text-xs font-medium text-slate-700">
+                Pesan WhatsApp
+              </p>
+              <p className="mb-3 text-xs text-slate-500">
+                Tombol WhatsApp membuka aplikasi Anda dengan pesan sudah terisi.
+                Tidak ada yang terkirim otomatis. Kode yang tersedia:{" "}
+                <span className="font-mono">
+                  {TEMPLATE_PLACEHOLDERS.join(" ")}
+                </span>
+              </p>
+
+              <Field
+                label="Kode negara"
+                hint="Untuk nomor yang ditulis diawali 0"
+                className="max-w-[140px]"
+              >
+                <Input name="waCountryCode" defaultValue={profile.waCountryCode} />
+              </Field>
+
+              <div className="mt-3 space-y-3">
+                <Field label="Pesan invoice baru">
+                  <Textarea
+                    name="waInvoiceTemplate"
+                    rows={6}
+                    defaultValue={
+                      profile.waInvoiceTemplate ?? DEFAULT_INVOICE_TEMPLATE
+                    }
+                  />
+                </Field>
+                <Field label="Pesan pengingat tagihan">
+                  <Textarea
+                    name="waReminderTemplate"
+                    rows={6}
+                    defaultValue={
+                      profile.waReminderTemplate ?? DEFAULT_REMINDER_TEMPLATE
+                    }
+                  />
+                </Field>
+                <Field label="Pesan penawaran">
+                  <Textarea
+                    name="waQuoteTemplate"
+                    rows={6}
+                    defaultValue={
+                      profile.waQuoteTemplate ?? DEFAULT_QUOTE_TEMPLATE
+                    }
+                  />
+                </Field>
+              </div>
+            </div>
 
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="mb-3 text-xs font-medium text-slate-700">
