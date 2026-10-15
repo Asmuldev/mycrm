@@ -1,0 +1,68 @@
+name: Deploy to CMI Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run Vitest
+        run: npm test
+
+  deploy:
+    name: Deploy via SSH
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Server CMI
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            export PATH=/www/server/nodejs/v24.19.0/bin:$PATH
+            cd /www/wwwroot/panel.asmuldev.web.id
+
+            echo "🚀 Fetching latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "📦 Installing dependencies..."
+            npm install --production=false
+
+            echo "🗄️ Running database migrations..."
+            npx prisma generate
+            npx prisma migrate deploy
+
+            echo "🔨 Building Next.js..."
+            npm run build
+
+            echo "🔄 Reloading PM2 process..."
+            pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
+            pm2 save
+
+            echo "✅ Deployment finished successfully!"
