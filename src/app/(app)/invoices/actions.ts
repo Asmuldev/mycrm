@@ -128,6 +128,32 @@ export async function updateInvoice(id: string, formData: FormData) {
 
 export async function setInvoiceStatus(id: string, status: InvoiceStatus) {
   await requireSession();
+
+  if (status === "PAID") {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      include: {
+        payments: true,
+        creditNotes: { where: { status: "ISSUED", deletedAt: null } },
+      },
+    });
+    if (invoice) {
+      const balance = invoiceBalance(invoice);
+      if (balance > 0) {
+        await prisma.payment.create({
+          data: {
+            invoiceId: id,
+            amount: balance.toFixed(2),
+            paidAt: new Date(),
+            method: "TRANSFER",
+            note: "Ditandai lunas manual",
+          },
+        });
+        await resumeServicesForInvoice(id);
+      }
+    }
+  }
+
   await prisma.invoice.update({ where: { id }, data: { status } });
   await recalcInvoice(id);
   revalidatePath("/invoices");
@@ -422,6 +448,33 @@ export async function bulkInvoiceAction(formData: FormData) {
     const status = (
       action === "sent" ? "SENT" : action === "paid" ? "PAID" : "CANCELLED"
     ) as InvoiceStatus;
+
+    if (status === "PAID") {
+      for (const id of ids) {
+        const invoice = await prisma.invoice.findUnique({
+          where: { id },
+          include: {
+            payments: true,
+            creditNotes: { where: { status: "ISSUED", deletedAt: null } },
+          },
+        });
+        if (invoice) {
+          const balance = invoiceBalance(invoice);
+          if (balance > 0) {
+            await prisma.payment.create({
+              data: {
+                invoiceId: id,
+                amount: balance.toFixed(2),
+                paidAt: new Date(),
+                method: "TRANSFER",
+                note: "Ditandai lunas manual (aksi massal)",
+              },
+            });
+            await resumeServicesForInvoice(id);
+          }
+        }
+      }
+    }
 
     await prisma.invoice.updateMany({
       where: { id: { in: ids } },
