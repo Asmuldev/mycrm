@@ -10,6 +10,9 @@ jobs:
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      AUTH_SECRET: "dummy-secret-at-least-32-characters-for-ci-build"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
