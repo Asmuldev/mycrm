@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import { computeInvoiceTotals, deriveInvoiceStatus } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { startOfToday } from "@/lib/time";
@@ -80,7 +81,25 @@ async function reserveNumber(kind: string, prefix: string) {
 
 export async function nextInvoiceNumber() {
   const profile = await getCompanyProfile();
-  return reserveNumber("invoice", profile.invoicePrefix);
+  const prefix = profile.invoicePrefix || "INV";
+  const year = startOfToday().getFullYear();
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const randomSuffix = randomInt(10000, 99999);
+    const candidate = `${prefix}/${year}/${randomSuffix}`;
+
+    const exists = await prisma.invoice.findUnique({
+      where: { number: candidate },
+      select: { id: true },
+    });
+
+    if (!exists) {
+      return candidate;
+    }
+  }
+
+  const randomSuffix = randomInt(100000, 999999);
+  return `${prefix}/${year}/${randomSuffix}`;
 }
 
 export async function nextQuoteNumber() {

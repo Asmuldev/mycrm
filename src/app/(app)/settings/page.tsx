@@ -103,7 +103,7 @@ export default async function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <Field label="Prefix invoice" hint="Contoh: INV/2026/0001">
+              <Field label="Prefix invoice" hint="Contoh: INV/2026/74921">
                 <Input name="invoicePrefix" defaultValue={profile.invoicePrefix} />
               </Field>
               <Field label="PPN default (%)">
